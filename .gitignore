@@ -1,0 +1,13 @@
+# API 密钥（绝对不能上传到 GitHub）
+.streamlit/secrets.toml
+
+# 缓存和输出文件
+outputs/
+papers/
+cache/
+__pycache__/
+*.pyc
+
+# 系统文件
+.DS_Store
+Thumbs.db
