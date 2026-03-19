@@ -32,13 +32,15 @@ from modules.multi_paper_summarizer import MultiPaperSummarizer
 
 
 # ============================================================
-# 配置区域（把 API 信息集中管理）
+# 配置区域（从环境变量或 .streamlit/secrets.toml 读取，不硬编码密钥）
 # ============================================================
 
-# 智谱 GLM（你已有的可用 Key）
-API_KEY = "b021644ce4f3460fb5110696128f586f.TXB1AXj4XuLU9wjc"
-BASE_URL = "https://open.bigmodel.cn/api/paas/v4"
-MODEL = "glm-4-flash"
+from config_loader import load_api_config
+
+_CONFIG = load_api_config()
+API_KEY = _CONFIG["api_key"]
+BASE_URL = _CONFIG["base_url"]
+MODEL = _CONFIG["model"]
 
 # PDF 保存目录
 PAPERS_DIR = os.path.join(os.path.dirname(__file__), "papers")

@@ -77,11 +77,22 @@ def search_papers(query: str, max_results: int = 10,
     # requests.get() 就是在代码里"打开一个网页"
     # 它会返回网页的内容（这里是 XML 格式的论文数据）
     #
-    # timeout=30 表示如果30秒没响应就放弃（防止一直卡住）
+    # timeout=60 表示如果60秒没响应就放弃（国内服务器访问 arXiv 较慢，适当放宽）
+    # 429 限流时重试 2 次，每次间隔 5 秒
 
     try:
-        response = requests.get(ARXIV_API_URL, params=params, timeout=30)
-        response.raise_for_status()  # 如果HTTP状态码不是200，抛出异常
+        for attempt in range(3):
+            response = requests.get(ARXIV_API_URL, params=params, timeout=60)
+            if response.status_code == 429:
+                if attempt < 2:
+                    print(f"  [!] arXiv 限流(429)，{5}秒后重试 ({attempt + 1}/2)...")
+                    time.sleep(5)
+                else:
+                    print(f"  [FAIL] 网络请求失败: 429 Too Many Requests（请稍后再试）")
+                    return []
+            else:
+                response.raise_for_status()
+                break
     except requests.RequestException as e:
         print(f"  [FAIL] 网络请求失败: {e}")
         return []

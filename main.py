@@ -13,18 +13,15 @@ from modules.pdf_processor import process_pdf
 from modules.paper_analyzer import PaperAnalyzer
 
 # ============================================================
-# 配置区域
+# 配置区域（从环境变量或 .streamlit/secrets.toml 读取，不硬编码密钥）
 # ============================================================
 
-# DeepSeek API（推荐，3元/百万token）
-DEEPSEEK_API_KEY = "your-deepseek-api-key"   # ← 替换成你的 Key
-DEEPSEEK_BASE_URL = "https://api.deepseek.com"
-DEEPSEEK_MODEL = "deepseek-chat"
+from config_loader import load_api_config
 
-# 或者用智谱 GLM（你的 demo 里已有 Key）
-ZHIPU_API_KEY = "b021644ce4f3460fb5110696128f586f.TXB1AXj4XuLU9wjc"
-ZHIPU_BASE_URL = "https://open.bigmodel.cn/api/paas/v4"
-ZHIPU_MODEL = "glm-4-flash"  # 用 flash 版本，更快更省钱
+_CONFIG = load_api_config()
+API_KEY = _CONFIG["api_key"]
+BASE_URL = _CONFIG["base_url"]
+MODEL = _CONFIG["model"]
 
 # ============================================================
 # 主流程
@@ -55,11 +52,13 @@ def analyze_paper(pdf_path: str):
     print("=" * 60)
 
     # 第二步：大模型分析
-    # 使用智谱 GLM（你已有 Key，直接可用）
+    if not API_KEY or API_KEY.startswith("your-"):
+        print("❌ 请配置 API 密钥：在 .streamlit/secrets.toml 中设置 API_KEY，或设置环境变量 API_KEY")
+        return None
     analyzer = PaperAnalyzer(
-        api_key=ZHIPU_API_KEY,
-        base_url=ZHIPU_BASE_URL,
-        model=ZHIPU_MODEL
+        api_key=API_KEY,
+        base_url=BASE_URL,
+        model=MODEL
     )
 
     result = analyzer.analyze(
