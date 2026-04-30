@@ -13,6 +13,7 @@ import sys
 import json
 import time
 import streamlit as st
+from openai import OpenAI
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -20,6 +21,29 @@ from modules.arxiv_searcher import search_papers, download_pdf
 from modules.pdf_processor import process_pdf
 from modules.paper_analyzer import PaperAnalyzer
 from modules.multi_paper_summarizer import MultiPaperSummarizer
+
+
+def check_api_health(api_key: str, base_url: str, model: str) -> dict:
+    """对 LLM 接口做一次最小调用，返回鉴权与可用性结果。"""
+    if not api_key:
+        return {"ok": False, "error": "未配置 API_KEY"}
+    try:
+        client = OpenAI(api_key=api_key, base_url=base_url)
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": "ping"}],
+            max_tokens=4,
+            temperature=0,
+        )
+        usage = response.usage
+        return {
+            "ok": True,
+            "model": model,
+            "reply": response.choices[0].message.content,
+            "tokens": getattr(usage, "total_tokens", None),
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 
 # ============================================================
@@ -88,13 +112,53 @@ query = st.text_input(
     placeholder="例如：federated learning privacy protection",
 )
 
-start_btn = st.button("🚀 开始调研", type="primary", use_container_width=True)
+col_check, col_start = st.columns([1, 3])
+with col_check:
+    check_btn = st.button("🩺 API 预检", use_container_width=True)
+with col_start:
+    start_btn = st.button("🚀 开始调研", type="primary", use_container_width=True)
+
+
+# ============================================================
+# API 预检：在跑全流程前先确认大模型接口可用
+# ============================================================
+if check_btn:
+    with st.spinner("正在检查 API 配置与可用性..."):
+        result = check_api_health(API_KEY, BASE_URL, MODEL)
+
+    if result["ok"]:
+        st.success(
+            f"API 可用 ✅  模型：{result['model']}  "
+            f"测试 token：{result.get('tokens', 'N/A')}"
+        )
+    else:
+        st.error(
+            "API 调用失败 ❌\n\n"
+            f"错误信息：{result['error']}\n\n"
+            "请检查 Streamlit Cloud → Manage app → Secrets 中的 "
+            "`API_KEY` / `BASE_URL` / `MODEL` 是否正确，并重启应用。"
+        )
 
 
 # ============================================================
 # 核心流程
 # ============================================================
 if start_btn and query:
+
+    # ---- Step 0: API 预检 ----
+    with st.spinner("Step 0: API 预检中..."):
+        precheck = check_api_health(API_KEY, BASE_URL, MODEL)
+
+    if not precheck["ok"]:
+        st.error(
+            "API 预检失败 ❌，已中止后续流程。\n\n"
+            f"错误信息：{precheck['error']}\n\n"
+            "请检查 Streamlit Cloud → Manage app → Secrets 中的 "
+            "`API_KEY` / `BASE_URL` / `MODEL` 是否正确，并重启应用。"
+        )
+        st.stop()
+
+    st.success(f"API 可用 ✅  模型：{precheck['model']}")
 
     # ---- Step 1: 搜索 ----
     with st.status("正在调研中...", expanded=True) as status:

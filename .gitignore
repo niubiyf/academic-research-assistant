@@ -1,5 +1,7 @@
 # API 密钥（绝对不能上传到 GitHub）
 .streamlit/secrets.toml
+deepseek_api.txt
+*.secret.txt
 
 # 缓存和输出文件
 outputs/
