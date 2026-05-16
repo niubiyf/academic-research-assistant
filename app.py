@@ -383,6 +383,31 @@ if start_btn and query:
         else:
             st.warning("未能生成报告大纲")
 
+        # ---- 大纲内容（新增）----
+        sections = summary.get("report_sections", [])
+        if isinstance(sections, list) and sections:
+            st.subheader("🧾 大纲章节内容（自动综合）")
+            for sec in sections:
+                if not isinstance(sec, dict):
+                    continue
+                title = sec.get("title", "未命名章节")
+                with st.expander(f"{title}", expanded=True):
+                    summary_text = str(sec.get("summary", "")).strip()
+                    if summary_text:
+                        st.write(summary_text)
+
+                    bullets = sec.get("bullets", [])
+                    if isinstance(bullets, list) and bullets:
+                        st.markdown("**要点：**")
+                        for b in bullets:
+                            st.markdown(f"- {b}")
+
+                    refs = sec.get("references", [])
+                    if isinstance(refs, list) and refs:
+                        st.markdown("**参考论文：**")
+                        for r in refs:
+                            st.markdown(f"- {r}")
+
     # ---- 保存结果 ----
     output_dir = os.path.join(os.path.dirname(__file__), "outputs")
     os.makedirs(output_dir, exist_ok=True)
