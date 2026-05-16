@@ -425,6 +425,22 @@ if start_btn and query:
 
     st.divider()
     st.success(f"📁 结果已保存到: `{file_path}`")
+    json_str = json.dumps(all_results, ensure_ascii=False, indent=2)
+    st.download_button(
+        label="⬇️ 下载本次结果(JSON)",
+        data=json_str,
+        file_name=f"{safe_name}.json",
+        mime="application/json",
+    )
+
+    # 云端 outputs 不会自动同步到本地，提供下载按钮便于保存到本机
+    json_str = json.dumps(all_results, ensure_ascii=False, indent=2)
+    st.download_button(
+        label="⬇️ 下载本次结果(JSON)",
+        data=json_str,
+        file_name=f"{safe_name}.json",
+        mime="application/json",
+    )
 
 elif start_btn and not query:
     st.warning("请先输入研究主题")
