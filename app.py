@@ -431,6 +431,8 @@ if start_btn and query:
         data=json_str,
         file_name=f"{safe_name}.json",
         mime="application/json",
+        on_click="ignore",
+        key=f"download_json_{safe_name}",
     )
 
 elif start_btn and not query:
