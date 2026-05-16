@@ -196,7 +196,7 @@ def run_pipeline(query: str, max_papers: int = 5) -> dict:
         api_key=API_KEY, base_url=BASE_URL, model=MODEL
     )
 
-    summary = summarizer.summarize(results["papers"])
+    summary = summarizer.summarize(results["papers"], topic=query)
     results["summary"] = summary
 
     # 打印归纳结果

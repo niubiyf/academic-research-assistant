@@ -235,7 +235,7 @@ if start_btn and query:
         summarizer = MultiPaperSummarizer(
             api_key=API_KEY, base_url=BASE_URL, model=MODEL
         )
-        summary = summarizer.summarize(paper_results)
+        summary = summarizer.summarize(paper_results, topic=query)
 
         st.write("✅ 归纳完成")
         status.update(label="调研完成！", state="complete", expanded=False)
@@ -316,24 +316,26 @@ if start_btn and query:
             # 主流方法
             st.subheader("🔬 主流研究方法")
             methods = summary.get("main_methods", [])
+            if not methods:
+                st.info("未识别到主流方法，已跳过该区域展示。")
+            else:
+                for i, method in enumerate(methods, 1):
+                    with st.expander(f"**方法 {i}：{method.get('name', 'Unknown')}**", expanded=True):
+                        st.markdown(f"**核心思想：** {method.get('core_idea', 'N/A')}")
 
-            for i, method in enumerate(methods, 1):
-                with st.expander(f"**方法 {i}：{method.get('name', 'Unknown')}**", expanded=True):
-                    st.markdown(f"**核心思想：** {method.get('core_idea', 'N/A')}")
+                        rep_papers = method.get("representative_papers", [])
+                        if rep_papers:
+                            st.markdown(f"**代表论文：** {'; '.join(rep_papers)}")
 
-                    rep_papers = method.get("representative_papers", [])
-                    if rep_papers:
-                        st.markdown(f"**代表论文：** {'; '.join(rep_papers)}")
-
-                    col_adv, col_dis = st.columns(2)
-                    with col_adv:
-                        st.markdown("**✅ 优点**")
-                        for adv in method.get("advantages", []):
-                            st.markdown(f"- {adv}")
-                    with col_dis:
-                        st.markdown("**❌ 缺点**")
-                        for dis in method.get("disadvantages", []):
-                            st.markdown(f"- {dis}")
+                        col_adv, col_dis = st.columns(2)
+                        with col_adv:
+                            st.markdown("**✅ 优点**")
+                            for adv in method.get("advantages", []):
+                                st.markdown(f"- {adv}")
+                        with col_dis:
+                            st.markdown("**❌ 缺点**")
+                            for dis in method.get("disadvantages", []):
+                                st.markdown(f"- {dis}")
 
             # 方法对比表
             comparison = summary.get("comparison_table", "")
@@ -349,7 +351,22 @@ if start_btn and query:
 
     # ---- Tab 4: 报告大纲 ----
     with tab4:
-        outline = summary.get("report_outline", [])
+        outline_raw = summary.get("report_outline", [])
+        if isinstance(outline_raw, str):
+            outline = [line.strip(" -\t") for line in outline_raw.splitlines() if line.strip()]
+        elif isinstance(outline_raw, list):
+            outline = []
+            for item in outline_raw:
+                if isinstance(item, str):
+                    s = item.strip()
+                    if s:
+                        outline.append(s)
+                elif isinstance(item, dict):
+                    title = str(item.get("title", "")).strip()
+                    if title:
+                        outline.append(title)
+        else:
+            outline = []
 
         if outline:
             st.subheader(f"📄 「{query}」文献调研报告大纲")
